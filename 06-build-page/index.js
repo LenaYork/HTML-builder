@@ -17,6 +17,30 @@ function writeFileAsync(filePath, content, callback) {
     });
 }
 
+// Функция для копирования папок и файлов
+function copyFiles(source, dest) {
+    fs.readdir(source, (err, files) => {
+        if (err) throw err;
+        fs.mkdir(dest, { recursive: true }, (err) => {
+            if (err) throw err;
+            files.forEach(file => {
+                const sourceFile = path.join(source, file);
+                const destFile = path.join(dest, file);
+                fs.stat(sourceFile, (err, stat) => {
+                    if (err) throw err;
+                    if (stat.isDirectory()) {
+                        copyFiles(sourceFile, destFile);
+                    } else {
+                        fs.copyFile(sourceFile, destFile, (err) => {
+                            if (err) throw err;
+                        });
+                    }
+                });
+            });
+        });
+    });
+}
+
 // Читаем содержимое шаблона
 const templatePath = path.join(__dirname, 'template.html');
 readFileAsync(templatePath, (templateContent) => {
@@ -77,19 +101,6 @@ readFileAsync(templatePath, (templateContent) => {
     // Копируем папку assets в project-dist/assets
     const assetsPath = path.join(__dirname, 'assets');
     const distAssetsPath = path.join(__dirname, 'project-dist', 'assets');
-    fs.mkdir(distAssetsPath, { recursive: true }, () => {
-        fs.readdir(assetsPath, (err, assetsFiles) => {
-        if (err) throw err;
+    copyFiles(assetsPath, distAssetsPath);
 
-        assetsFiles.forEach((fileName) => {
-            const assetPath = path.join(assetsPath, fileName);
-            const distAssetPath = path.join(distAssetsPath, fileName);
-            fs.copyFile(assetPath, distAssetPath, (err) => {
-            //   if (err) throw err;
-                console.log(`Файл ${fileName} успешно скопирован в project-dist/assets`);
-                });
-            });
-        });
-    });
-
-});
+})
